@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"sync"
 	"time"
 
@@ -38,24 +39,31 @@ func NewProxy(serviceConfig *ServiceConfig, tsConfig *TailscaleConfig) *Proxy {
 
 // Start initializes and starts the proxy server
 func (p *Proxy) Start() error {
+
+	basedir, err := os.UserConfigDir()
+	if err != nil {
+		return fmt.Errorf("failed to get user config dir: %w", err)
+	}
+
 	// Create tsnet server
 	p.server = &tsnet.Server{
 		Hostname:  p.config.Hostname,
 		AuthKey:   p.tsConfig.AuthKey,
 		Ephemeral: p.tsConfig.Ephemeral,
 		Logf:      log.Printf,
+		Dir:       fmt.Sprintf("%s/webtail/%s", basedir, p.config.Hostname),
 	}
 
 	// Start the tsnet server
 	if err := p.server.Start(); err != nil {
-		return fmt.Errorf("failed to start tsnet server for %s: %w", p.config.Name, err)
+		return fmt.Errorf("failed to start tsnet server for %s: %w", p.config.Hostname, err)
 	}
 
 	// Create oxy forwarder
 	fwd, err := forward.New()
 	if err != nil {
 		p.server.Close()
-		return fmt.Errorf("failed to create forwarder for %s: %w", p.config.Name, err)
+		return fmt.Errorf("failed to create forwarder for %s: %w", p.config.Hostname, err)
 	}
 	p.forwarder = fwd
 
@@ -63,7 +71,7 @@ func (p *Proxy) Start() error {
 	listener, err := p.server.ListenTLS("tcp", ":443")
 	if err != nil {
 		p.server.Close()
-		return fmt.Errorf("failed to create listener for %s: %w", p.config.Name, err)
+		return fmt.Errorf("failed to create listener for %s: %w", p.config.Hostname, err)
 	}
 	p.listener = listener
 
@@ -77,10 +85,10 @@ func (p *Proxy) Start() error {
 	go func() {
 		defer p.wg.Done()
 		log.Printf("Starting proxy for %s at %s.%s -> localhost:%d",
-			p.config.Name, p.config.Hostname, p.tsConfig.TailnetDomain, p.config.LocalPort)
+			p.config.Hostname, p.config.Hostname, p.tsConfig.TailnetDomain, p.config.LocalPort)
 
 		if err := server.Serve(p.listener); err != nil && err != http.ErrServerClosed {
-			log.Printf("Server error for %s: %v", p.config.Name, err)
+			log.Printf("Server error for %s: %v", p.config.Hostname, err)
 		}
 	}()
 
@@ -126,10 +134,10 @@ func (p *Proxy) Stop() error {
 
 	select {
 	case <-done:
-		log.Printf("Proxy for %s stopped", p.config.Name)
+		log.Printf("Proxy for %s stopped", p.config.Hostname)
 		return nil
 	case <-time.After(10 * time.Second):
-		log.Printf("Timeout waiting for proxy %s to stop", p.config.Name)
-		return fmt.Errorf("timeout stopping proxy for %s", p.config.Name)
+		log.Printf("Timeout waiting for proxy %s to stop", p.config.Hostname)
+		return fmt.Errorf("timeout stopping proxy for %s", p.config.Hostname)
 	}
 }

@@ -48,12 +48,10 @@ Create a `config.json` file in the same directory as the executable:
   },
   "services": [
     {
-      "name": "plex",
       "local_port": 32400,
       "hostname": "plex"
     },
     {
-      "name": "sonarr",
       "local_port": 8989,
       "hostname": "sonarr"
     }

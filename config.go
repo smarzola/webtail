@@ -21,7 +21,6 @@ type TailscaleConfig struct {
 
 // ServiceConfig represents configuration for a single service
 type ServiceConfig struct {
-	Name      string `json:"name"`
 	LocalPort int    `json:"local_port"`
 	Hostname  string `json:"hostname"`
 }
@@ -62,9 +61,6 @@ func validateConfig(config *Config) error {
 	}
 
 	for i, service := range config.Services {
-		if service.Name == "" {
-			return fmt.Errorf("service[%d]: name is required", i)
-		}
 		if service.LocalPort <= 0 || service.LocalPort > 65535 {
 			return fmt.Errorf("service[%d]: local_port must be between 1 and 65535", i)
 		}
