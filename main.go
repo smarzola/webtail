@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -10,7 +11,16 @@ import (
 	"time"
 )
 
+// version is set at build time via -ldflags
+var version = "dev"
+
 func main() {
+	// Print version if requested
+	if len(os.Args) > 1 && os.Args[1] == "--version" {
+		fmt.Printf("webtail %s\n", version)
+		os.Exit(0)
+	}
+
 	// Parse command-line flags
 	configPath := flag.String("config", "config.json", "Path to configuration file")
 	flag.Parse()
