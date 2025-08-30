@@ -47,13 +47,15 @@ jobs:
 
       - name: Build binary
         run: |
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags="-X main.version=${{ github.ref_name }}" -o ${{ matrix.name }} .
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags="-X main.version=${{ github.ref_name }}" -o webtail .
+          mkdir -p ${{ matrix.name }}
+          mv webtail ${{ matrix.name }}/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}
-          path: ${{ matrix.name }}
+          path: ${{ matrix.name }}/
 
   release:
     needs: build
@@ -72,9 +74,10 @@ jobs:
       - name: Create release archives
         run: |
           cd artifacts
+          VERSION=${{ github.ref_name }}
           for dir in */; do
             if [ -d "$dir" ]; then
-              tar -czf "${dir%/}.tar.gz" -C "$dir" .
+              tar -czf "${dir%/}-${VERSION}.tar.gz" -C "$dir" .
             fi
           done
           ls -la *.tar.gz
