@@ -13,26 +13,60 @@ A reverse proxy that creates individual Tailscale devices for each service, expo
 
 ## Prerequisites
 
-- Go 1.19 or later
+### For Downloading from Releases:
+- A Tailscale account with admin access
+- Tailscale auth key (reusable or single-use)
+
+### For Building from Source:
+- Go 1.25.0 or later
 - A Tailscale account with admin access
 - Tailscale auth key (reusable or single-use)
 
 ## Installation
 
-1. Clone this repository:
-```bash
-git clone <repository-url>
-cd webtail
-```
+### Option 1: Download from Releases (Recommended)
 
-2. Install dependencies:
-```bash
-go mod tidy
-```
+1. Go to the [GitHub Releases](https://github.com/smarzola/webtail/releases) page
+2. Download the appropriate archive for your platform:
+   - `webtail-linux-amd64-vX.X.X.tar.gz` for Linux (AMD64)
+   - `webtail-linux-arm64-vX.X.X.tar.gz` for Linux (ARM64)
+   - `webtail-darwin-arm64-vX.X.X.tar.gz` for macOS (ARM64)
+3. Extract the archive:
+   ```bash
+   tar -xzf webtail-linux-amd64-v1.0.0.tar.gz
+   ```
+4. The `webtail` binary is ready to use!
 
-3. Build the application:
+### Option 2: Build from Source
+
+1. Ensure you have Go 1.25.0 or later installed
+2. Clone this repository:
+   ```bash
+   git clone https://github.com/smarzola/webtail.git
+   cd webtail
+   ```
+3. Install dependencies:
+   ```bash
+   go mod tidy
+   ```
+4. Build the application:
+   ```bash
+   go build -o webtail .
+   ```
+
+### Using Make (Optional)
+
+If you prefer using Make for building:
+
 ```bash
-go build -o webtail .
+# Build for current platform
+make build
+
+# Build for all platforms
+make build-all
+
+# Create release archives
+make VERSION=v1.0.0 release-archives
 ```
 
 ## Configuration
