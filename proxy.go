@@ -67,36 +67,19 @@ func (p *Proxy) Start() error {
 		return fmt.Errorf("no Tailscale domain found for %s", p.config.NodeName)
 	}
 
-	// Get configuration values with defaults
 	passHost := boolValue(p.config.PassHostHeader, false)
 	trustForward := boolValue(p.config.TrustForwardHeader, false)
 
-	// Create oxy forwarder with dynamic configuration
-	fwd, err := forward.New(forward.PassHostHeader(passHost))
+	passHostOpt := forward.PassHostHeader(passHost)
+	rewriterOpt := forward.Rewriter(&forward.HeaderRewriter{
+		TrustForwardHeader: trustForward,
+		Hostname:           tsDomains[0],
+	})
+
+	fwd, err := forward.New(passHostOpt, rewriterOpt)
 	if err != nil {
 		p.server.Close()
 		return fmt.Errorf("failed to create forwarder for %s: %w", p.config.NodeName, err)
-	}
-
-	// Configure header rewriter based on trust settings
-	var rewriter *forward.HeaderRewriter
-	if trustForward {
-		// Trust forward headers and use Tailscale domain
-		rewriter = &forward.HeaderRewriter{
-			TrustForwardHeader: true,
-			Hostname:           tsDomains[0],
-		}
-	} else {
-		// Don't trust forward headers
-		rewriter = &forward.HeaderRewriter{
-			TrustForwardHeader: false,
-		}
-	}
-
-	// Apply the rewriter to the forwarder
-	if err := forward.Rewriter(rewriter)(fwd); err != nil {
-		p.server.Close()
-		return fmt.Errorf("failed to configure rewriter for %s: %w", p.config.NodeName, err)
 	}
 
 	p.forwarder = fwd
