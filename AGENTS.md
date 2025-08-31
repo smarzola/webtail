@@ -28,6 +28,9 @@
 - **Validation**: Ensure target URLs are properly formatted
 - **Simplified config**: Removed redundant `tailnet_domain` field (determined by auth key)
 - **Node names**: Use simple hostnames (e.g., "plex") instead of full domain names
+- **Forwarder options**: Added configurable `pass_host_header` and `trust_forward_header` per service
+- **Security defaults**: Both forwarder options default to `false` for security
+- **Tailscale integration**: Uses `server.Up()` for proper domain access and certificate handling
 
 ## Development Workflow
 - **Lint**: No specific linter configured, use `go vet ./...` for basic checks
