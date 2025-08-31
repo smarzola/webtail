@@ -17,23 +17,22 @@ A reverse proxy that creates individual Tailscale devices for each service, expo
 
 ### For Downloading from Releases:
 - A Tailscale account with admin access
-- Tailscale auth key (reusable or single-use)
+- Tailscale reusable auth key
 - **Tailscale HTTPS enabled** in your Tailscale admin console
 
 ### For Building from Source:
 - Go 1.25.0 or later
 - A Tailscale account with admin access
-- Tailscale auth key (reusable or single-use)
+- Tailscale reusable auth key
 - **Tailscale HTTPS enabled** in your Tailscale admin console
 
 ## Enable Tailscale HTTPS
 
 Before using webtail, you need to enable Tailscale HTTPS for automatic certificate management:
 
-1. Go to your [Tailscale Admin Console](https://login.tailscale.com/admin)
-2. Navigate to **Settings** → **General**
-3. Enable **HTTPS certificates** for your tailnet
-4. This allows Tailscale to automatically provision and renew HTTPS certificates for your nodes
+1. Go to your [Tailscale Admin Console](https://login.tailscale.com/admin/dns)
+2. Enable **HTTPS certificates** for your tailnet
+3. This allows Tailscale to automatically provision and renew HTTPS certificates for your nodes
 
 ## Installation
 
@@ -100,7 +99,7 @@ Create a `config.json` file in the same directory as the executable:
     },
     {
       "upstream_host": "plex-server:32400",
-      "node_name": "plex.your-tailnet.ts.net"
+      "node_name": "plex-docker.your-tailnet.ts.net"
     },
     {
       "upstream_host": "192.168.1.100:8989",
