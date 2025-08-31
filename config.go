@@ -20,8 +20,10 @@ type TailscaleConfig struct {
 
 // ServiceConfig represents configuration for a single service
 type ServiceConfig struct {
-	Target   string `json:"target"`
-	NodeName string `json:"node_name"`
+	Target             string `json:"target"`
+	NodeName           string `json:"node_name"`
+	PassHostHeader     *bool  `json:"pass_host_header,omitempty"`
+	TrustForwardHeader *bool  `json:"trust_forward_header,omitempty"`
 }
 
 // LoadConfig reads and parses the configuration file
@@ -43,6 +45,14 @@ func LoadConfig(configPath string) (*Config, error) {
 	}
 
 	return &config, nil
+}
+
+// boolValue returns the bool value or default if nil
+func boolValue(ptr *bool, defaultVal bool) bool {
+	if ptr == nil {
+		return defaultVal
+	}
+	return *ptr
 }
 
 // validateConfig checks if the configuration is valid

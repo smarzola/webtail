@@ -98,11 +98,13 @@ Create a `config.json` file in the same directory as the executable:
     },
     {
       "target": "http://plex-server:32400",
-      "node_name": "plex-docker"
+      "node_name": "plex-docker",
+      "pass_host_header": true
     },
     {
       "target": "http://192.168.1.100:8989",
-      "node_name": "sonarr"
+      "node_name": "sonarr",
+      "trust_forward_header": true
     }
   ]
 }
@@ -117,6 +119,8 @@ Create a `config.json` file in the same directory as the executable:
 #### Service Configuration
 - `target`: Full URL of the upstream service including scheme (e.g., "http://localhost:32400", "https://plex-server:32400", "http://192.168.1.100:8989") (required)
 - `node_name`: Tailscale node hostname (e.g., "plex", "api", "web") (required)
+- `pass_host_header`: Whether to pass the original Host header to upstream service (optional, default: false)
+- `trust_forward_header`: Whether to trust X-Forwarded-* headers from client (optional, default: false)
 
 ## Usage
 

@@ -50,21 +50,55 @@ func (p *Proxy) Start() error {
 		Hostname:  p.config.NodeName,
 		AuthKey:   p.tsConfig.AuthKey,
 		Ephemeral: p.tsConfig.Ephemeral,
-		Logf:      log.Printf,
+		UserLogf:  log.Printf,
 		Dir:       fmt.Sprintf("%s/webtail/%s", basedir, p.config.NodeName),
 	}
 
-	// Start the tsnet server
-	if err := p.server.Start(); err != nil {
+	// Start the tsnet server (must use Up() to get domains)
+	_, err = p.server.Up(context.Background())
+	if err != nil {
 		return fmt.Errorf("failed to start tsnet server for %s: %w", p.config.NodeName, err)
 	}
 
-	// Create oxy forwarder
-	fwd, err := forward.New()
+	// Get Tailscale domains for header rewriting
+	tsDomains := p.server.CertDomains()
+	if len(tsDomains) == 0 {
+		p.server.Close()
+		return fmt.Errorf("no Tailscale domain found for %s", p.config.NodeName)
+	}
+
+	// Get configuration values with defaults
+	passHost := boolValue(p.config.PassHostHeader, false)
+	trustForward := boolValue(p.config.TrustForwardHeader, false)
+
+	// Create oxy forwarder with dynamic configuration
+	fwd, err := forward.New(forward.PassHostHeader(passHost))
 	if err != nil {
 		p.server.Close()
 		return fmt.Errorf("failed to create forwarder for %s: %w", p.config.NodeName, err)
 	}
+
+	// Configure header rewriter based on trust settings
+	var rewriter *forward.HeaderRewriter
+	if trustForward {
+		// Trust forward headers and use Tailscale domain
+		rewriter = &forward.HeaderRewriter{
+			TrustForwardHeader: true,
+			Hostname:           tsDomains[0],
+		}
+	} else {
+		// Don't trust forward headers
+		rewriter = &forward.HeaderRewriter{
+			TrustForwardHeader: false,
+		}
+	}
+
+	// Apply the rewriter to the forwarder
+	if err := forward.Rewriter(rewriter)(fwd); err != nil {
+		p.server.Close()
+		return fmt.Errorf("failed to configure rewriter for %s: %w", p.config.NodeName, err)
+	}
+
 	p.forwarder = fwd
 
 	// Create listener on the tailnet
@@ -114,7 +148,7 @@ func (p *Proxy) handleRequest(w http.ResponseWriter, r *http.Request) {
 	targetURL.Path = r.URL.Path
 	targetURL.RawQuery = r.URL.RawQuery
 
-	// Update the request URL
+	// Update the request URL and Host header
 	r.URL = targetURL
 	r.Host = targetURL.Host
 
