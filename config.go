@@ -21,8 +21,8 @@ type TailscaleConfig struct {
 
 // ServiceConfig represents configuration for a single service
 type ServiceConfig struct {
-	UpstreamHost string `json:"upstream_host"`
-	NodeName     string `json:"node_name"`
+	Target   string `json:"target"`
+	NodeName string `json:"node_name"`
 }
 
 // LoadConfig reads and parses the configuration file
@@ -61,8 +61,8 @@ func validateConfig(config *Config) error {
 	}
 
 	for i, service := range config.Services {
-		if service.UpstreamHost == "" {
-			return fmt.Errorf("service[%d]: upstream_host is required", i)
+		if service.Target == "" {
+			return fmt.Errorf("service[%d]: target is required", i)
 		}
 		if service.NodeName == "" {
 			return fmt.Errorf("service[%d]: node_name is required", i)

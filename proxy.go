@@ -85,7 +85,7 @@ func (p *Proxy) Start() error {
 	go func() {
 		defer p.wg.Done()
 		log.Printf("Starting proxy for %s at %s.%s -> %s",
-			p.config.NodeName, p.config.NodeName, p.tsConfig.TailnetDomain, p.config.UpstreamHost)
+			p.config.NodeName, p.config.NodeName, p.tsConfig.TailnetDomain, p.config.Target)
 
 		if err := server.Serve(p.listener); err != nil && err != http.ErrServerClosed {
 			log.Printf("Server error for %s: %v", p.config.NodeName, err)
@@ -97,13 +97,22 @@ func (p *Proxy) Start() error {
 
 // handleRequest forwards the request to the upstream service
 func (p *Proxy) handleRequest(w http.ResponseWriter, r *http.Request) {
-	// Create target URL for the upstream service
-	targetURL := &url.URL{
-		Scheme:   "http",
-		Host:     p.config.UpstreamHost,
-		Path:     r.URL.Path,
-		RawQuery: r.URL.RawQuery,
+	// Parse the target URL
+	targetURL, err := url.Parse(p.config.Target)
+	if err != nil {
+		http.Error(w, "Invalid target URL", http.StatusInternalServerError)
+		log.Printf("Failed to parse target URL %s: %v", p.config.Target, err)
+		return
 	}
+
+	// Preserve the original scheme if not specified
+	if targetURL.Scheme == "" {
+		targetURL.Scheme = "http"
+	}
+
+	// Update path and query from the incoming request
+	targetURL.Path = r.URL.Path
+	targetURL.RawQuery = r.URL.RawQuery
 
 	// Update the request URL
 	r.URL = targetURL

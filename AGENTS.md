@@ -20,6 +20,12 @@
 - **Concurrency**: Use `context.Context` for cancellation, `sync.WaitGroup` for coordination
 - **Logging**: Use `log.Printf` for consistent logging format
 - **Cleanup**: Use `defer` statements for resource cleanup
+- **URL handling**: Parse target URLs properly to support http/https schemes
+
+## Configuration Changes
+- **Target field**: Use `target` instead of `upstream_host` to support full URLs with schemes
+- **URL parsing**: Always parse target URLs and default to http if no scheme provided
+- **Validation**: Ensure target URLs are properly formatted
 
 ## Development Workflow
 - **Lint**: No specific linter configured, use `go vet ./...` for basic checks

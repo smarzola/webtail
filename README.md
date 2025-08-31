@@ -94,15 +94,15 @@ Create a `config.json` file in the same directory as the executable:
   },
   "services": [
     {
-      "upstream_host": "localhost:32400",
+      "target": "http://localhost:32400",
       "node_name": "plex.your-tailnet.ts.net"
     },
     {
-      "upstream_host": "plex-server:32400",
+      "target": "http://plex-server:32400",
       "node_name": "plex-docker.your-tailnet.ts.net"
     },
     {
-      "upstream_host": "192.168.1.100:8989",
+      "target": "http://192.168.1.100:8989",
       "node_name": "sonarr.your-tailnet.ts.net"
     }
   ]
@@ -117,7 +117,7 @@ Create a `config.json` file in the same directory as the executable:
 - `tailnet_domain`: Your tailnet domain (required)
 
 #### Service Configuration
-- `upstream_host`: Host and port where the upstream service runs (e.g., "localhost:32400", "plex-server:32400", "192.168.1.100:8989") (required)
+- `target`: Full URL of the upstream service including scheme (e.g., "http://localhost:32400", "https://plex-server:32400", "http://192.168.1.100:8989") (required)
 - `node_name`: Full Tailscale node name (e.g., "plex.your-tailnet.ts.net") (required)
 
 ## Usage

@@ -1,0 +1,70 @@
+package main
+
+import (
+	"testing"
+)
+
+func TestValidateConfig(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  Config
+		wantErr bool
+	}{
+		{
+			name: "valid config with http target",
+			config: Config{
+				Tailscale: TailscaleConfig{
+					AuthKey:       "test-key",
+					TailnetDomain: "test.ts.net",
+				},
+				Services: []ServiceConfig{
+					{
+						Target:   "http://localhost:8080",
+						NodeName: "test.test.ts.net",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid config with https target",
+			config: Config{
+				Tailscale: TailscaleConfig{
+					AuthKey:       "test-key",
+					TailnetDomain: "test.ts.net",
+				},
+				Services: []ServiceConfig{
+					{
+						Target:   "https://api.example.com",
+						NodeName: "api.test.ts.net",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid config missing target",
+			config: Config{
+				Tailscale: TailscaleConfig{
+					AuthKey:       "test-key",
+					TailnetDomain: "test.ts.net",
+				},
+				Services: []ServiceConfig{
+					{
+						NodeName: "test.test.ts.net",
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateConfig(&tt.config)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateConfig() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
