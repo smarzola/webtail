@@ -45,3 +45,6 @@ config.json
 
 # Built binaries
 webtail
+
+# Distribution files
+dist/
