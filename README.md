@@ -5,7 +5,9 @@ A reverse proxy that creates individual Tailscale devices for each service, expo
 ## Features
 
 - **Per-service Tailscale devices**: Each service gets its own Tailscale node
-- **Automatic hostname assignment**: Services are accessible at `service-name.your-tailnet.ts.net`
+- **Automatic HTTPS certificates**: Tailscale HTTPS provides free SSL certificates
+- **Secure access**: Services exposed on port 443 with automatic certificate renewal
+- **Automatic hostname assignment**: Services are accessible at `https://service-name.your-tailnet.ts.net`
 - **Ephemeral nodes**: Optional ephemeral node support for temporary deployments
 - **HTTP proxying**: Uses oxy library for robust HTTP forwarding
 - **Configuration-driven**: All settings managed through a JSON config file
@@ -16,11 +18,22 @@ A reverse proxy that creates individual Tailscale devices for each service, expo
 ### For Downloading from Releases:
 - A Tailscale account with admin access
 - Tailscale auth key (reusable or single-use)
+- **Tailscale HTTPS enabled** in your Tailscale admin console
 
 ### For Building from Source:
 - Go 1.25.0 or later
 - A Tailscale account with admin access
 - Tailscale auth key (reusable or single-use)
+- **Tailscale HTTPS enabled** in your Tailscale admin console
+
+## Enable Tailscale HTTPS
+
+Before using webtail, you need to enable Tailscale HTTPS for automatic certificate management:
+
+1. Go to your [Tailscale Admin Console](https://login.tailscale.com/admin)
+2. Navigate to **Settings** → **General**
+3. Enable **HTTPS certificates** for your tailnet
+4. This allows Tailscale to automatically provision and renew HTTPS certificates for your nodes
 
 ## Installation
 
@@ -118,8 +131,10 @@ Create a `config.json` file in the same directory as the executable:
 ```
 
 3. **Access your services**: Once running, your services will be available at:
-   - `plex.your-tailnet.ts.net`
-   - `sonarr.your-tailnet.ts.net`
+   - `https://plex.your-tailnet.ts.net`
+   - `https://sonarr.your-tailnet.ts.net`
+
+   **Note**: Services are exposed on port 443 with automatic HTTPS certificates provided by Tailscale.
 
 ## How It Works
 
@@ -127,7 +142,7 @@ Create a `config.json` file in the same directory as the executable:
 
 2. **Hostname Assignment**: Each node gets a hostname based on the service configuration (e.g., `plex` becomes `plex.your-tailnet.ts.net`).
 
-3. **Proxy Setup**: Each node listens on port 80 and forwards requests to the corresponding local service using the oxy HTTP proxy library.
+3. **Proxy Setup**: Each node listens on port 443 with automatic HTTPS certificates from Tailscale, and forwards requests to the corresponding upstream service using the oxy HTTP proxy library.
 
 4. **Tailnet Integration**: All nodes automatically join your tailnet and are accessible from any device in your network.
 
