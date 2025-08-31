@@ -1,10 +1,10 @@
 # Webtail - Tailscale Reverse Proxy
 
-A reverse proxy that creates individual Tailscale devices for each service, exposing them on your tailnet with custom hostnames.
+A reverse proxy that creates individual Tailscale nodes for each target service, exposing them on your tailnet with custom hostnames.
 
 ## Features
 
-- **Per-service Tailscale devices**: Each service gets its own Tailscale node
+- **Per-service Tailscale nodes**: Each service gets its own Tailscale node
 - **Automatic HTTPS certificates**: Tailscale HTTPS provides free SSL certificates
 - **Secure access**: Services exposed on port 443 with automatic certificate renewal
 - **Automatic hostname assignment**: Services are accessible at `https://service-name.your-tailnet.ts.net`
