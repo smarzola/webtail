@@ -47,23 +47,23 @@ func (p *Proxy) Start() error {
 
 	// Create tsnet server
 	p.server = &tsnet.Server{
-		Hostname:  p.config.Hostname,
+		Hostname:  p.config.NodeName,
 		AuthKey:   p.tsConfig.AuthKey,
 		Ephemeral: p.tsConfig.Ephemeral,
 		Logf:      log.Printf,
-		Dir:       fmt.Sprintf("%s/webtail/%s", basedir, p.config.Hostname),
+		Dir:       fmt.Sprintf("%s/webtail/%s", basedir, p.config.NodeName),
 	}
 
 	// Start the tsnet server
 	if err := p.server.Start(); err != nil {
-		return fmt.Errorf("failed to start tsnet server for %s: %w", p.config.Hostname, err)
+		return fmt.Errorf("failed to start tsnet server for %s: %w", p.config.NodeName, err)
 	}
 
 	// Create oxy forwarder
 	fwd, err := forward.New()
 	if err != nil {
 		p.server.Close()
-		return fmt.Errorf("failed to create forwarder for %s: %w", p.config.Hostname, err)
+		return fmt.Errorf("failed to create forwarder for %s: %w", p.config.NodeName, err)
 	}
 	p.forwarder = fwd
 
@@ -71,7 +71,7 @@ func (p *Proxy) Start() error {
 	listener, err := p.server.ListenTLS("tcp", ":443")
 	if err != nil {
 		p.server.Close()
-		return fmt.Errorf("failed to create listener for %s: %w", p.config.Hostname, err)
+		return fmt.Errorf("failed to create listener for %s: %w", p.config.NodeName, err)
 	}
 	p.listener = listener
 
@@ -84,23 +84,23 @@ func (p *Proxy) Start() error {
 	p.wg.Add(1)
 	go func() {
 		defer p.wg.Done()
-		log.Printf("Starting proxy for %s at %s.%s -> localhost:%d",
-			p.config.Hostname, p.config.Hostname, p.tsConfig.TailnetDomain, p.config.LocalPort)
+		log.Printf("Starting proxy for %s at %s.%s -> %s",
+			p.config.NodeName, p.config.NodeName, p.tsConfig.TailnetDomain, p.config.UpstreamHost)
 
 		if err := server.Serve(p.listener); err != nil && err != http.ErrServerClosed {
-			log.Printf("Server error for %s: %v", p.config.Hostname, err)
+			log.Printf("Server error for %s: %v", p.config.NodeName, err)
 		}
 	}()
 
 	return nil
 }
 
-// handleRequest forwards the request to the local service
+// handleRequest forwards the request to the upstream service
 func (p *Proxy) handleRequest(w http.ResponseWriter, r *http.Request) {
-	// Create target URL for the local service
+	// Create target URL for the upstream service
 	targetURL := &url.URL{
 		Scheme:   "http",
-		Host:     fmt.Sprintf("localhost:%d", p.config.LocalPort),
+		Host:     p.config.UpstreamHost,
 		Path:     r.URL.Path,
 		RawQuery: r.URL.RawQuery,
 	}
@@ -134,10 +134,10 @@ func (p *Proxy) Stop() error {
 
 	select {
 	case <-done:
-		log.Printf("Proxy for %s stopped", p.config.Hostname)
+		log.Printf("Proxy for %s stopped", p.config.NodeName)
 		return nil
 	case <-time.After(10 * time.Second):
-		log.Printf("Timeout waiting for proxy %s to stop", p.config.Hostname)
-		return fmt.Errorf("timeout stopping proxy for %s", p.config.Hostname)
+		log.Printf("Timeout waiting for proxy %s to stop", p.config.NodeName)
+		return fmt.Errorf("timeout stopping proxy for %s", p.config.NodeName)
 	}
 }

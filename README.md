@@ -48,12 +48,16 @@ Create a `config.json` file in the same directory as the executable:
   },
   "services": [
     {
-      "local_port": 32400,
-      "hostname": "plex"
+      "upstream_host": "localhost:32400",
+      "node_name": "plex.your-tailnet.ts.net"
     },
     {
-      "local_port": 8989,
-      "hostname": "sonarr"
+      "upstream_host": "plex-server:32400",
+      "node_name": "plex.your-tailnet.ts.net"
+    },
+    {
+      "upstream_host": "192.168.1.100:8989",
+      "node_name": "sonarr.your-tailnet.ts.net"
     }
   ]
 }
@@ -67,9 +71,8 @@ Create a `config.json` file in the same directory as the executable:
 - `tailnet_domain`: Your tailnet domain (required)
 
 #### Service Configuration
-- `name`: Human-readable name for the service (required)
-- `local_port`: Port number where the service runs locally (required, 1-65535)
-- `hostname`: Hostname for the Tailscale device (required)
+- `upstream_host`: Host and port where the upstream service runs (e.g., "localhost:32400", "plex-server:32400", "192.168.1.100:8989") (required)
+- `node_name`: Full Tailscale node name (e.g., "plex.your-tailnet.ts.net") (required)
 
 ## Usage
 

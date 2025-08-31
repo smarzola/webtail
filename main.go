@@ -50,10 +50,10 @@ func main() {
 		go func(p *Proxy) {
 			defer wg.Done()
 			if err := p.Start(); err != nil {
-				log.Printf("Failed to start proxy for %s: %v", p.config.Hostname, err)
+				log.Printf("Failed to start proxy for %s: %v", p.config.NodeName, err)
 				return
 			}
-			log.Printf("Started proxy for %s", p.config.Hostname)
+			log.Printf("Started proxy for %s", p.config.NodeName)
 		}(proxy)
 		startedProxies++
 	}
@@ -83,7 +83,7 @@ func main() {
 			go func(p *Proxy) {
 				defer stopWg.Done()
 				if err := p.Stop(); err != nil {
-					log.Printf("Error stopping proxy for %s: %v", p.config.Hostname, err)
+					log.Printf("Error stopping proxy for %s: %v", p.config.NodeName, err)
 				}
 			}(proxy)
 		}

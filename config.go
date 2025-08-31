@@ -21,8 +21,8 @@ type TailscaleConfig struct {
 
 // ServiceConfig represents configuration for a single service
 type ServiceConfig struct {
-	LocalPort int    `json:"local_port"`
-	Hostname  string `json:"hostname"`
+	UpstreamHost string `json:"upstream_host"`
+	NodeName     string `json:"node_name"`
 }
 
 // LoadConfig reads and parses the configuration file
@@ -61,11 +61,11 @@ func validateConfig(config *Config) error {
 	}
 
 	for i, service := range config.Services {
-		if service.LocalPort <= 0 || service.LocalPort > 65535 {
-			return fmt.Errorf("service[%d]: local_port must be between 1 and 65535", i)
+		if service.UpstreamHost == "" {
+			return fmt.Errorf("service[%d]: upstream_host is required", i)
 		}
-		if service.Hostname == "" {
-			return fmt.Errorf("service[%d]: hostname is required", i)
+		if service.NodeName == "" {
+			return fmt.Errorf("service[%d]: node_name is required", i)
 		}
 	}
 
