@@ -26,6 +26,8 @@
 - **Target field**: Use `target` instead of `upstream_host` to support full URLs with schemes
 - **URL parsing**: Always parse target URLs and default to http if no scheme provided
 - **Validation**: Ensure target URLs are properly formatted
+- **Simplified config**: Removed redundant `tailnet_domain` field (determined by auth key)
+- **Node names**: Use simple hostnames (e.g., "plex") instead of full domain names
 
 ## Development Workflow
 - **Lint**: No specific linter configured, use `go vet ./...` for basic checks
