@@ -14,13 +14,12 @@ func TestValidateConfig(t *testing.T) {
 			name: "valid config with http target",
 			config: Config{
 				Tailscale: TailscaleConfig{
-					AuthKey:       "test-key",
-					TailnetDomain: "test.ts.net",
+					AuthKey: "test-key",
 				},
 				Services: []ServiceConfig{
 					{
 						Target:   "http://localhost:8080",
-						NodeName: "test.test.ts.net",
+						NodeName: "test",
 					},
 				},
 			},
@@ -30,13 +29,12 @@ func TestValidateConfig(t *testing.T) {
 			name: "valid config with https target",
 			config: Config{
 				Tailscale: TailscaleConfig{
-					AuthKey:       "test-key",
-					TailnetDomain: "test.ts.net",
+					AuthKey: "test-key",
 				},
 				Services: []ServiceConfig{
 					{
 						Target:   "https://api.example.com",
-						NodeName: "api.test.ts.net",
+						NodeName: "api",
 					},
 				},
 			},
@@ -46,12 +44,11 @@ func TestValidateConfig(t *testing.T) {
 			name: "invalid config missing target",
 			config: Config{
 				Tailscale: TailscaleConfig{
-					AuthKey:       "test-key",
-					TailnetDomain: "test.ts.net",
+					AuthKey: "test-key",
 				},
 				Services: []ServiceConfig{
 					{
-						NodeName: "test.test.ts.net",
+						NodeName: "test",
 					},
 				},
 			},

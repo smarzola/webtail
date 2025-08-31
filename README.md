@@ -89,21 +89,20 @@ Create a `config.json` file in the same directory as the executable:
 {
   "tailscale": {
     "auth_key": "tskey-your-auth-key-here",
-    "ephemeral": true,
-    "tailnet_domain": "your-tailnet.ts.net"
+    "ephemeral": true
   },
   "services": [
     {
       "target": "http://localhost:32400",
-      "node_name": "plex.your-tailnet.ts.net"
+      "node_name": "plex"
     },
     {
       "target": "http://plex-server:32400",
-      "node_name": "plex-docker.your-tailnet.ts.net"
+      "node_name": "plex-docker"
     },
     {
       "target": "http://192.168.1.100:8989",
-      "node_name": "sonarr.your-tailnet.ts.net"
+      "node_name": "sonarr"
     }
   ]
 }
@@ -114,11 +113,10 @@ Create a `config.json` file in the same directory as the executable:
 #### Tailscale Configuration
 - `auth_key`: Your Tailscale auth key (required)
 - `ephemeral`: Whether to create ephemeral nodes (optional, default: false)
-- `tailnet_domain`: Your tailnet domain (required)
 
 #### Service Configuration
 - `target`: Full URL of the upstream service including scheme (e.g., "http://localhost:32400", "https://plex-server:32400", "http://192.168.1.100:8989") (required)
-- `node_name`: Full Tailscale node name (e.g., "plex.your-tailnet.ts.net") (required)
+- `node_name`: Tailscale node hostname (e.g., "plex", "api", "web") (required)
 
 ## Usage
 
@@ -132,6 +130,8 @@ Create a `config.json` file in the same directory as the executable:
 3. **Access your services**: Once running, your services will be available at:
    - `https://plex.your-tailnet.ts.net`
    - `https://sonarr.your-tailnet.ts.net`
+
+   **Note**: The tailnet domain is automatically determined by your Tailscale configuration.
 
    **Note**: Services are exposed on port 443 with automatic HTTPS certificates provided by Tailscale.
 

@@ -14,9 +14,8 @@ type Config struct {
 
 // TailscaleConfig holds global Tailscale settings
 type TailscaleConfig struct {
-	AuthKey       string `json:"auth_key"`
-	Ephemeral     bool   `json:"ephemeral"`
-	TailnetDomain string `json:"tailnet_domain"`
+	AuthKey   string `json:"auth_key"`
+	Ephemeral bool   `json:"ephemeral"`
 }
 
 // ServiceConfig represents configuration for a single service
@@ -50,10 +49,6 @@ func LoadConfig(configPath string) (*Config, error) {
 func validateConfig(config *Config) error {
 	if config.Tailscale.AuthKey == "" {
 		return fmt.Errorf("tailscale auth_key is required")
-	}
-
-	if config.Tailscale.TailnetDomain == "" {
-		return fmt.Errorf("tailscale tailnet_domain is required")
 	}
 
 	if len(config.Services) == 0 {

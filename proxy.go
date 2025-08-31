@@ -84,8 +84,8 @@ func (p *Proxy) Start() error {
 	p.wg.Add(1)
 	go func() {
 		defer p.wg.Done()
-		log.Printf("Starting proxy for %s at %s.%s -> %s",
-			p.config.NodeName, p.config.NodeName, p.tsConfig.TailnetDomain, p.config.Target)
+		log.Printf("Starting proxy for %s -> %s",
+			p.config.NodeName, p.config.Target)
 
 		if err := server.Serve(p.listener); err != nil && err != http.ErrServerClosed {
 			log.Printf("Server error for %s: %v", p.config.NodeName, err)
