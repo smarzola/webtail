@@ -11,6 +11,7 @@ A reverse proxy that creates individual Tailscale nodes for each target service,
 - **Ephemeral nodes**: Optional ephemeral node support for temporary deployments
 - **HTTP proxying**: Uses oxy library for robust HTTP forwarding
 - **Configuration-driven**: All settings managed through a JSON config file
+- **Docker integration**: Automatic discovery of containers via Docker labels
 - **Graceful shutdown**: Proper cleanup of all proxy servers
 
 ## Prerequisites
@@ -124,6 +125,8 @@ Create a `config.json` file in the same directory as the executable:
 
 ## Usage
 
+### Configuration-based Mode
+
 1. **Configure your services**: Edit `config.json` with your Tailscale credentials and service details.
 
 2. **Start the proxy**:
@@ -138,6 +141,156 @@ Create a `config.json` file in the same directory as the executable:
    **Note**: The tailnet domain is automatically determined by your Tailscale configuration.
 
    **Note**: Services are exposed on port 443 with automatic HTTPS certificates provided by Tailscale.
+
+### Docker Discovery Mode
+
+Webtail can automatically discover and proxy Docker containers based on labels. The target URL is built dynamically using the container name and the Docker network specified in the config file.
+
+1. **Configure Docker settings**: Add the `docker` section to your `config.json`:
+
+```json
+{
+  "tailscale": {
+    "auth_key": "tskey-your-auth-key-here",
+    "ephemeral": true
+  },
+  "docker": {
+    "network": "webtail"
+  },
+  "services": []
+}
+```
+
+With optional Docker client settings:
+
+```json
+{
+  "tailscale": {
+    "auth_key": "tskey-your-auth-key-here",
+    "ephemeral": true
+  },
+  "docker": {
+    "network": "webtail",
+    "host": "tcp://192.168.1.100:2376",
+    "api_version": "1.41",
+    "cert_path": "/path/to/certs",
+    "tls_verify": true
+  },
+  "services": []
+}
+```
+
+2. **Enable Docker mode**:
+```bash
+./webtail -config config.json -docker
+```
+
+3. **Label your containers**: Add the following labels to your Docker containers:
+
+```yaml
+# docker-compose.yml example - minimal configuration
+services:
+  my-app:
+    image: my-app:latest
+    expose:
+      - "8080"
+    networks:
+      - webtail
+    labels:
+      webtail.enabled: "true"
+      # All other labels are optional:
+      # webtail.node_name: "my-app"             # optional, defaults to container name
+      # webtail.port: "8080"                    # optional, auto-detected from exposed ports
+      # webtail.protocol: "http"                # optional, default: http
+      # webtail.pass_host_header: "false"       # optional, default: false
+      # webtail.trust_forward_header: "false"   # optional, default: false
+
+networks:
+  webtail:
+    external: true
+```
+
+Or with Docker CLI (minimal):
+```bash
+docker run -d \
+  --name my-app \
+  --network webtail \
+  --expose 8080 \
+  --label webtail.enabled=true \
+  my-app:latest
+```
+
+With explicit overrides:
+```bash
+docker run -d \
+  --network webtail \
+  --label webtail.enabled=true \
+  --label webtail.node_name=custom-name \
+  --label webtail.port=9000 \
+  my-app:latest
+```
+
+4. **Automatic lifecycle**: When a labeled container starts, webtail automatically creates a proxy. When the container stops, the proxy is removed.
+
+The target URL is built as: `{protocol}://{container_name}.{docker_network}:{port}`
+
+For example, a container named `my-app` on network `webtail` with port `8080` becomes: `http://my-app.webtail:8080`
+
+#### Docker Labels
+
+| Label | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `webtail.enabled` | Yes | - | Must be `"true"` to enable proxying |
+| `webtail.port` | No | lowest exposed | Container port to proxy to. If not specified, uses the lowest port number among the container's exposed ports |
+| `webtail.node_name` | No | container name | Tailscale node hostname. If not specified, uses the container name |
+| `webtail.protocol` | No | `http` | Protocol to use (http or https) |
+| `webtail.pass_host_header` | No | `false` | Pass original Host header to upstream |
+| `webtail.trust_forward_header` | No | `false` | Trust X-Forwarded-* headers from client |
+
+**Port Auto-Detection**: When `webtail.port` is not specified, webtail automatically detects the port by inspecting the container's exposed ports and selecting the lowest port number. For example, if a container exposes ports 80 and 8080, port 80 will be used. If no ports are exposed and no label is provided, the container will be skipped with a warning.
+
+**Node Name Auto-Detection**: When `webtail.node_name` is not specified, the container name is used as the Tailscale node hostname. This allows for minimal configuration - you only need `webtail.enabled=true` if your container has exposed ports.
+
+#### Docker Configuration
+
+The `docker` section in `config.json` supports the following fields:
+
+| Field | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `network` | Yes (when using `-docker`) | - | Docker network name for container DNS resolution |
+| `host` | No | from env | URL to the Docker server (e.g., `unix:///var/run/docker.sock`, `tcp://localhost:2376`) |
+| `api_version` | No | auto | API version to use (leave empty for auto-negotiation) |
+| `cert_path` | No | from env | Directory containing TLS certificates (`ca.pem`, `cert.pem`, `key.pem`) |
+| `tls_verify` | No | `false` | Enable TLS verification when connecting to Docker |
+
+#### Docker Environment Variables
+
+Alternatively, the Docker client can be configured using environment variables. Environment variables take precedence over config file settings.
+
+| Variable | Description |
+|----------|-------------|
+| `DOCKER_HOST` | URL to the Docker server (e.g., `unix:///var/run/docker.sock`, `tcp://localhost:2376`) |
+| `DOCKER_API_VERSION` | API version to use (leave empty for latest) |
+| `DOCKER_CERT_PATH` | Directory containing TLS certificates (`ca.pem`, `cert.pem`, `key.pem`) |
+| `DOCKER_TLS_VERIFY` | Enable TLS verification (`1` to enable, empty to disable). Off by default |
+
+Example with remote Docker host using environment variables:
+```bash
+export DOCKER_HOST=tcp://192.168.1.100:2376
+export DOCKER_TLS_VERIFY=1
+export DOCKER_CERT_PATH=/path/to/certs
+./webtail -config config.json -docker
+```
+
+### Combined Mode
+
+You can use both configuration-based and Docker discovery together:
+
+```bash
+./webtail -config config.json -docker
+```
+
+This allows you to have static services defined in `config.json` alongside dynamic Docker container discovery. When using Docker mode, the `services` array in `config.json` can be empty but `docker.network` is required.
 
 ## How It Works
 

@@ -23,26 +23,26 @@ func main() {
 
 	// Parse command-line flags
 	configPath := flag.String("config", "config.json", "Path to configuration file")
+	dockerEnabled := flag.Bool("docker", false, "Enable Docker container discovery")
 	flag.Parse()
 
 	// Load configuration
-	config, err := LoadConfig(*configPath)
+	config, err := LoadConfig(*configPath, *dockerEnabled)
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
 	log.Printf("Loaded configuration with %d services", len(config.Services))
 
-	// Create proxies for each service
+	// Create proxies for each service from config
 	var proxies []*Proxy
 	for _, serviceConfig := range config.Services {
 		proxy := NewProxy(&serviceConfig, &config.Tailscale)
 		proxies = append(proxies, proxy)
 	}
 
-	// Start all proxies
+	// Start all config-based proxies
 	var wg sync.WaitGroup
-	cancel := func() {} // placeholder cancel function
 
 	startedProxies := 0
 	for _, proxy := range proxies {
@@ -58,23 +58,49 @@ func main() {
 		startedProxies++
 	}
 
-	if startedProxies == 0 {
-		log.Fatal("No proxies could be started")
+	// Start Docker watcher if enabled
+	var dockerWatcher *DockerWatcher
+	if *dockerEnabled {
+		log.Printf("Docker discovery enabled on network %q, starting Docker watcher...", config.Docker.Network)
+		dockerWatcher, err = NewDockerWatcher(&config.Tailscale, &config.Docker)
+		if err != nil {
+			log.Printf("Warning: Failed to create Docker watcher: %v", err)
+		} else {
+			if err := dockerWatcher.Start(); err != nil {
+				log.Printf("Warning: Failed to start Docker watcher: %v", err)
+				dockerWatcher = nil
+			}
+		}
 	}
 
-	log.Printf("Started %d proxies. Press Ctrl+C to stop.", startedProxies)
+	if startedProxies == 0 && dockerWatcher == nil {
+		log.Fatal("No proxies could be started and Docker watcher is not running")
+	}
+
+	if startedProxies > 0 {
+		log.Printf("Started %d config-based proxies.", startedProxies)
+	}
+	if dockerWatcher != nil {
+		log.Println("Docker watcher is running for dynamic container discovery.")
+	}
+	log.Println("Press Ctrl+C to stop.")
 
 	// Wait for shutdown signal
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	<-sigChan
-	log.Println("Received shutdown signal, stopping proxies...")
+	log.Println("Received shutdown signal, stopping...")
 
-	// Cancel context to signal shutdown
-	cancel()
+	// Stop Docker watcher first
+	if dockerWatcher != nil {
+		log.Println("Stopping Docker watcher...")
+		if err := dockerWatcher.Stop(); err != nil {
+			log.Printf("Error stopping Docker watcher: %v", err)
+		}
+	}
 
-	// Stop all proxies with timeout
+	// Stop all config-based proxies with timeout
 	done := make(chan struct{})
 	go func() {
 		var stopWg sync.WaitGroup

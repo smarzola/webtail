@@ -10,12 +10,22 @@ import (
 type Config struct {
 	Tailscale TailscaleConfig `json:"tailscale"`
 	Services  []ServiceConfig `json:"services"`
+	Docker    DockerConfig    `json:"docker,omitempty"`
 }
 
 // TailscaleConfig holds global Tailscale settings
 type TailscaleConfig struct {
 	AuthKey   string `json:"auth_key"`
 	Ephemeral bool   `json:"ephemeral"`
+}
+
+// DockerConfig holds Docker client settings
+type DockerConfig struct {
+	Network    string `json:"network,omitempty"`
+	Host       string `json:"host,omitempty"`
+	APIVersion string `json:"api_version,omitempty"`
+	CertPath   string `json:"cert_path,omitempty"`
+	TLSVerify  *bool  `json:"tls_verify,omitempty"`
 }
 
 // ServiceConfig represents configuration for a single service
@@ -27,7 +37,7 @@ type ServiceConfig struct {
 }
 
 // LoadConfig reads and parses the configuration file
-func LoadConfig(configPath string) (*Config, error) {
+func LoadConfig(configPath string, dockerEnabled bool) (*Config, error) {
 	file, err := os.Open(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open config file: %w", err)
@@ -40,7 +50,7 @@ func LoadConfig(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	if err := validateConfig(&config); err != nil {
+	if err := validateConfig(&config, dockerEnabled); err != nil {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
@@ -56,13 +66,19 @@ func boolValue(ptr *bool, defaultVal bool) bool {
 }
 
 // validateConfig checks if the configuration is valid
-func validateConfig(config *Config) error {
+func validateConfig(config *Config, dockerEnabled bool) error {
 	if config.Tailscale.AuthKey == "" {
 		return fmt.Errorf("tailscale auth_key is required")
 	}
 
-	if len(config.Services) == 0 {
-		return fmt.Errorf("at least one service must be configured")
+	// Services are optional when Docker discovery is enabled
+	if len(config.Services) == 0 && !dockerEnabled {
+		return fmt.Errorf("at least one service must be configured (or use -docker flag)")
+	}
+
+	// Docker network is required when Docker discovery is enabled
+	if dockerEnabled && config.Docker.Network == "" {
+		return fmt.Errorf("docker.network is required when using -docker flag")
 	}
 
 	for i, service := range config.Services {

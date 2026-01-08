@@ -32,6 +32,21 @@
 - **Security defaults**: Both forwarder options default to `false` for security
 - **Tailscale integration**: Uses `server.Up()` for proper domain access and certificate handling
 
+## Docker Integration
+- **Enable Docker mode**: Use `-docker` flag to enable Docker container discovery
+- **Docker network**: Configure `docker.network` in config.json (required for Docker mode)
+- **Docker client config**: Optional `docker.host`, `docker.api_version`, `docker.cert_path`, `docker.tls_verify` in config.json
+- **Docker labels**: Containers must have `webtail.enabled=true` to be proxied
+- **Required labels**: None (only `webtail.enabled=true`)
+- **Optional labels**: `webtail.node_name` (defaults to container name), `webtail.port` (auto-detected from lowest exposed port), `webtail.protocol` (default: http), `webtail.pass_host_header`, `webtail.trust_forward_header` (both default to false)
+- **Port auto-detection**: If `webtail.port` is not set, uses lowest exposed port (e.g., 80 preferred over 8080)
+- **Node name auto-detection**: If `webtail.node_name` is not set, uses the container name
+- **Dynamic target**: Target URL built as `{protocol}://{container_name}.{docker_network}:{port}`
+- **Lifecycle management**: Proxies are automatically created/removed when containers start/stop
+- **Existing containers**: On startup, webtail scans running containers for webtail labels
+- **Combined mode**: Can use both config file and Docker discovery simultaneously
+- **Docker env vars**: `DOCKER_HOST` (server URL), `DOCKER_API_VERSION` (API version), `DOCKER_CERT_PATH` (TLS certs dir), `DOCKER_TLS_VERIFY` (enable TLS verification)
+
 ## Development Workflow
 - **Lint**: No specific linter configured, use `go vet ./...` for basic checks
 - **Format**: Run `gofmt -w .` before committing
