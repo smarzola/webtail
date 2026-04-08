@@ -42,7 +42,6 @@ func main() {
 
 	// Start all proxies
 	var wg sync.WaitGroup
-	cancel := func() {} // placeholder cancel function
 
 	startedProxies := 0
 	for _, proxy := range proxies {
@@ -70,9 +69,6 @@ func main() {
 
 	<-sigChan
 	log.Println("Received shutdown signal, stopping proxies...")
-
-	// Cancel context to signal shutdown
-	cancel()
 
 	// Stop all proxies with timeout
 	done := make(chan struct{})

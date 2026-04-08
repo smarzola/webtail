@@ -17,13 +17,14 @@ import (
 
 // Proxy represents a single service proxy
 type Proxy struct {
-	config    *ServiceConfig
-	tsConfig  *TailscaleConfig
-	server    *tsnet.Server
-	forwarder http.Handler
-	listener  net.Listener
-	cancel    context.CancelFunc
-	wg        sync.WaitGroup
+	config     *ServiceConfig
+	tsConfig   *TailscaleConfig
+	server     *tsnet.Server
+	httpServer *http.Server
+	forwarder  http.Handler
+	listener   net.Listener
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
 }
 
 // NewProxy creates a new proxy instance for a service
@@ -93,7 +94,7 @@ func (p *Proxy) Start() error {
 	p.listener = listener
 
 	// Create HTTP server
-	server := &http.Server{
+	p.httpServer = &http.Server{
 		Handler: http.HandlerFunc(p.handleRequest),
 	}
 
@@ -104,7 +105,7 @@ func (p *Proxy) Start() error {
 		log.Printf("Starting proxy for %s -> %s",
 			p.config.NodeName, p.config.Target)
 
-		if err := server.Serve(p.listener); err != nil && err != http.ErrServerClosed {
+		if err := p.httpServer.Serve(p.listener); err != nil && err != http.ErrServerClosed {
 			log.Printf("Server error for %s: %v", p.config.NodeName, err)
 		}
 	}()
@@ -143,27 +144,19 @@ func (p *Proxy) handleRequest(w http.ResponseWriter, r *http.Request) {
 func (p *Proxy) Stop() error {
 	p.cancel()
 
-	if p.listener != nil {
-		p.listener.Close()
+	if p.httpServer != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := p.httpServer.Shutdown(ctx); err != nil {
+			log.Printf("Error shutting down HTTP server for %s: %v", p.config.NodeName, err)
+		}
 	}
 
 	if p.server != nil {
 		p.server.Close()
 	}
 
-	// Wait for the serving goroutine to finish
-	done := make(chan struct{})
-	go func() {
-		p.wg.Wait()
-		close(done)
-	}()
-
-	select {
-	case <-done:
-		log.Printf("Proxy for %s stopped", p.config.NodeName)
-		return nil
-	case <-time.After(10 * time.Second):
-		log.Printf("Timeout waiting for proxy %s to stop", p.config.NodeName)
-		return fmt.Errorf("timeout stopping proxy for %s", p.config.NodeName)
-	}
+	p.wg.Wait()
+	log.Printf("Proxy for %s stopped", p.config.NodeName)
+	return nil
 }
