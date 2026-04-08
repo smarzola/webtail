@@ -1,0 +1,9 @@
+.git/
+dist/
+webtail
+webtail-*
+*.tar.gz
+config.json
+docker-compose.yml
+*.md
+.github/

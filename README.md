@@ -81,6 +81,48 @@ make build-all
 make VERSION=v1.0.0 release-archives
 ```
 
+### Option 3: Docker
+
+Pull and run the pre-built image from GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/smarzola/webtail:latest
+```
+
+```bash
+docker run -d \
+  --name webtail \
+  --restart unless-stopped \
+  -v /path/to/config.json:/config/config.json:ro \
+  -v webtail-state:/data \
+  ghcr.io/smarzola/webtail:latest
+```
+
+Or with Docker Compose using the provided `docker-compose.yml`:
+
+```bash
+docker compose up -d
+```
+
+#### State persistence
+
+Webtail stores Tailscale node identity under `/data` inside the container. Mount a named volume there so each node keeps its identity across restarts:
+
+```yaml
+volumes:
+  - webtail-state:/data
+```
+
+If you set `"ephemeral": true` in your config, Tailscale nodes are removed from your tailnet on shutdown and re-registered fresh each start — no persistent volume needed for `/data` in that case.
+
+#### Available image tags
+
+| Tag | Description |
+|-----|-------------|
+| `latest` | Most recent stable release |
+| `v1.2.3` | Specific version |
+| `1.2` | Latest patch for a minor version |
+
 ## Configuration
 
 Create a `config.json` file in the same directory as the executable:

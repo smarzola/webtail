@@ -1,0 +1,13 @@
+services:
+  webtail:
+    image: ghcr.io/smarzola/webtail:latest
+    restart: unless-stopped
+    volumes:
+      # Mount your config.json read-only
+      - ./config.json:/config/config.json:ro
+      # Persist tsnet state across restarts (Tailscale node identity)
+      # Remove this volume if using ephemeral: true in config
+      - webtail-state:/data
+
+volumes:
+  webtail-state:
